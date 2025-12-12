@@ -261,7 +261,7 @@ namespace WhoDis
 
                 t.Gobject = tabButton;
                 tabButton.AddComponent<TabButton>().tab = t;
-                tabButton.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
+                tabButton.transform.Find("image").GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
             }
             mainTabs.transform.Find("tab").gameObject.Destroy();
 
@@ -273,7 +273,7 @@ namespace WhoDis
 
                 t.Gobject = tabButton;
                 tabButton.AddComponent<TabButton>().tab = t;
-                tabButton.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
+                tabButton.transform.Find("image").GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
             }
             playerTabsObj.transform.Find("tab").gameObject.Destroy();
 
@@ -283,25 +283,31 @@ namespace WhoDis
         void createText()
         {
             var mainText = mainAsset.transform.Find("mainPanel/Canvas/maintext").GetComponent<TextMeshProUGUI>();
+            var selectedText = mainAsset.transform.Find("mainPanel/Canvas/selecetdplayer").GetComponent<TextMeshProUGUI>();
             mainText.fontSize = 6;
+            selectedText.text = "by shibagt <3";
 
             if (selectedTabIndex == 0) //home
                 mainText.text = "Welcome to WhoDis!\r\n\r\nSimply hold down your\r\nleft grip to select the\r\nplayer you want to\r\nanalyse!\r\nOr, you can click the\r\nplayers tab below!";
             else if (selectedTabIndex == 1) //players
                 mainText.text = "";
             else if (selectedTabIndex == 2) //player info
+            {
                 mainText.text =
                     $"{GetPlatform(selectedPlayer)}" +
                     $"{GetFPS(selectedPlayer)} FPS" +
                     $"{GetPing(selectedPlayer)}ms" +
                     $"{GetColor(selectedPlayer)}" +
                     $"{GetDate(selectedPlayer)}";
+                selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
+            }
             else if (selectedTabIndex == 3) //mods tab
             {
                 mainText.fontSize = 5;
                 mainText.text =
                     $"Player Mods\n" +
                     $"{GetMods(selectedPlayer)}";
+                selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
             }
         }
 
