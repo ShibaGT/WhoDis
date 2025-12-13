@@ -17,6 +17,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using Valve.Newtonsoft.Json;
+using static OVRInput;
 using static UnityEngine.TouchScreenKeyboard;
 
 namespace WhoDis
@@ -39,10 +40,9 @@ namespace WhoDis
     {
         public Tab tab;
         public float btnDelay;
-
         public void Update()
         {
-            if (Time.time > btnDelay + 0.35f && (Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.1f) || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.1f)
+            if (Time.time > btnDelay + 1 && (Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.25f) || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.25f)
             {
                 btnDelay = Time.time;
                 Plugin.ToggleTab(tab);
@@ -64,7 +64,7 @@ namespace WhoDis
         { get { return GTPlayer.Instance.RightHand.controllerTransform; } }
 
         public static Color selectionColor = new Color(0.00f, 0.66f, 0.60f, 0.60f);
-        public static Color panelColor = new Color32(18, 18, 20, 220);
+        public static Color panelColor = new Color32(5, 5, 10, 250);
         public static Color tabsColor = new Color32(30, 136, 229, 220);
 
         public static LineRenderer lr;
@@ -84,8 +84,6 @@ namespace WhoDis
             new Tab("Mods", "mods.png", ()=> selectedTabIndex = 3), //3
         };
 
-        bool toggle;
-
         void Update()
         {
             if (ControllerInputPoller.instance.leftControllerGripFloat > 0.5f)
@@ -99,7 +97,8 @@ namespace WhoDis
 
             if (mainPanel != null)
             {
-                mainAsset.transform.position = GTPlayer.Instance.headCollider.transform.position + GTPlayer.Instance.headCollider.transform.forward * 1.1f;
+                createText();
+                mainAsset.transform.position = GTPlayer.Instance.headCollider.transform.position + GTPlayer.Instance.headCollider.transform.forward * 0.8f;
                 mainAsset.transform.rotation = Quaternion.LookRotation(mainAsset.transform.position - GTPlayer.Instance.headCollider.transform.position);
             }
         }
@@ -187,11 +186,8 @@ namespace WhoDis
                 mainAsset = LoadAsset("whodis");
                 mainPanel = mainAsset.transform.Find("mainPanel").gameObject;
             }
-            mainAsset.transform.position = GTPlayer.Instance.headCollider.transform.position + GTPlayer.Instance.headCollider.transform.forward * 1.1f;
-            mainAsset.transform.rotation = Quaternion.LookRotation(mainAsset.transform.position - GTPlayer.Instance.headCollider.transform.position);
 
             makeButtons();
-            createText();
         }
 
         void showPanel(VRRig player)
@@ -230,13 +226,9 @@ namespace WhoDis
         {
             if (mainPanel != null)
             {
-                mainPanel.GetComponent<Renderer>().material.shader = Shader.Find("GUI/Text Shader");
-                mainPanel.GetComponent<Renderer>().material.renderQueue =  3000;
                 mainPanel.GetComponent<Renderer>().material.color = panelColor;
                 var line = mainPanel.transform.Find("line").GetComponent<Renderer>();
-                line.material.shader = Shader.Find("GUI/Text Shader");
-                line.material.renderQueue = 3001;
-                line.material.color = new Color32(30, 30, 30, 225);
+                line.material.color = tabsColor;
             }
         }
 
@@ -261,7 +253,10 @@ namespace WhoDis
 
                 t.Gobject = tabButton;
                 tabButton.AddComponent<TabButton>().tab = t;
-                tabButton.transform.Find("image").GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
+                GameObject image = tabButton.transform.Find("image").gameObject;
+                image.GetComponent<Renderer>().material.shader = Shader.Find("Universal Render Pipeline/Lit");
+                image.GetComponent<Renderer>().material.color = Color.white;
+                image.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
             }
             mainTabs.transform.Find("tab").gameObject.Destroy();
 
@@ -273,36 +268,63 @@ namespace WhoDis
 
                 t.Gobject = tabButton;
                 tabButton.AddComponent<TabButton>().tab = t;
-                tabButton.transform.Find("image").GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
+                GameObject image = tabButton.transform.Find("image").gameObject;
+                image.GetComponent<Renderer>().material.shader = Shader.Find("Universal Render Pipeline/Lit");
+                image.GetComponent<Renderer>().material.color = Color.white;
+                image.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
             }
             playerTabsObj.transform.Find("tab").gameObject.Destroy();
+
+            var stopButton = mainPanel.transform.Find("quit");
+            stopButton.GetComponent<Renderer>().material.color = tabsColor;
+            var quitTab = new Tab("quit", "quit.png", () => destroyPanel());
+            quitTab.Gobject = stopButton.gameObject;
+            stopButton.AddComponent<TabButton>().tab = quitTab;
+            GameObject quitimage = stopButton.transform.Find("image").gameObject;
+            quitimage.GetComponent<Renderer>().material.shader = Shader.Find("Universal Render Pipeline/Lit");
+            quitimage.GetComponent<Renderer>().material.color = Color.white;
+            quitimage.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + quitTab.tabImage);
 
             colorPanel();
         }
 
         void createText()
         {
+            if (mainPanel == null)
+                return;
             var mainText = mainAsset.transform.Find("mainPanel/Canvas/maintext").GetComponent<TextMeshProUGUI>();
-            var selectedText = mainAsset.transform.Find("mainPanel/Canvas/selecetdplayer").GetComponent<TextMeshProUGUI>();
+            var selectedText = mainAsset.transform.Find("mainPanel/Canvas/selected").GetComponent<TextMeshProUGUI>();
             mainText.fontSize = 6;
             selectedText.text = "by shibagt <3";
 
             if (selectedTabIndex == 0) //home
                 mainText.text = "Welcome to WhoDis!\r\n\r\nSimply hold down your\r\nleft grip to select the\r\nplayer you want to\r\nanalyse!\r\nOr, you can click the\r\nplayers tab below!";
             else if (selectedTabIndex == 1) //players
+            {
                 mainText.text = "";
+            }
             else if (selectedTabIndex == 2) //player info
             {
+                if (selectedPlayer == null)
+                {
+                    mainText.text = "Selected player left!";
+                    return;
+                }
                 mainText.text =
-                    $"{GetPlatform(selectedPlayer)}" +
-                    $"{GetFPS(selectedPlayer)} FPS" +
-                    $"{GetPing(selectedPlayer)}ms" +
-                    $"{GetColor(selectedPlayer)}" +
-                    $"{GetDate(selectedPlayer)}";
+                        $"{GetPlatform(selectedPlayer)}\n" +
+                        $"{GetFPS(selectedPlayer)} FPS\n" +
+                        $"{GetPing(selectedPlayer)}ms\n" +
+                        $"{GetColor(selectedPlayer)}\n" +
+                        $"{GetDate(selectedPlayer)}\n";
                 selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
             }
             else if (selectedTabIndex == 3) //mods tab
             {
+                if (selectedPlayer == null)
+                {
+                    mainText.text = "Selected player left!";
+                    return;
+                }
                 mainText.fontSize = 5;
                 mainText.text =
                     $"Player Mods\n" +
