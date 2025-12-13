@@ -361,7 +361,7 @@ namespace WhoDis
                     selectedTabIndex = 2;
                     showPanel();
                 });
-                offset += 0.04f;
+                offset += 0.06f;
             }
         }
 
