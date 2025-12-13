@@ -1,8 +1,8 @@
 ﻿using BepInEx;
 using GorillaLocomotion;
 using GorillaNetworking;
-using HarmonyLib;
 using Photon.Pun;
+using Photon.Realtime;
 using PlayFab;
 using PlayFab.ClientModels;
 using System;
@@ -17,8 +17,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using Valve.Newtonsoft.Json;
-using static OVRInput;
-using static UnityEngine.TouchScreenKeyboard;
 
 namespace WhoDis
 {
@@ -39,13 +37,12 @@ namespace WhoDis
     public class TabButton : MonoBehaviour
     {
         public Tab tab;
-        public float btnDelay;
         public void Update()
         {
-            if (Time.time > btnDelay + 1 && (Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.25f) || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.25f)
+            if (Time.time > Plugin.btnDelay + 1 && (Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.15) || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.15)
             {
-                btnDelay = Time.time;
-                Plugin.ToggleTab(tab);
+                Plugin.btnDelay = Time.time;
+                tab.callMethod.Invoke();
                 GorillaTagger.Instance.StartVibration(false, 1f, 0.1f);
                 GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(84, false, 0.8f);
             }
@@ -58,6 +55,7 @@ namespace WhoDis
         // made with love by tai/shibagt <3
 
         public static GameObject mainAsset, mainPanel, mainTabs, playerTabsObj, playerSelectionCapsule;
+        public static float btnDelay;
         public static Transform leftController
         { get { return GTPlayer.Instance.LeftHand.controllerTransform; } }
         public static Transform rightController
@@ -75,7 +73,7 @@ namespace WhoDis
         public static Tab[] normalTabs = new Tab[]
         {
             new Tab("Home", "home.png", ()=> selectedTabIndex = 0), //0
-            new Tab("Players", "players.png", ()=> PlayersList()), //1
+            new Tab("Players", "players.png", ()=> { selectedTabIndex = 1; showPanel(); }), //1
         };
 
         public static Tab[] playerTabs = new Tab[]
@@ -176,7 +174,7 @@ namespace WhoDis
         void selectPlayer(VRRig player) =>
             showPanel(player);
 
-        void showPanel()
+        static void showPanel()
         {
             Debug.Log("drawn");
             destroyPanel();
@@ -192,20 +190,12 @@ namespace WhoDis
 
         void showPanel(VRRig player)
         {
-            if (mainPanel == null)
-            {
-                selectedPlayer = player;
-                selectedTabIndex = 2; //players tab
-                showPanel();
-            }
-            else
-            {
-                selectedPlayer = player;
-                selectedTabIndex = 2; //players tab
-            }
+            selectedPlayer = player;
+            selectedTabIndex = 2; //players tab
+            showPanel();
         }
 
-        void destroyPanel()
+        static void destroyPanel()
         {
             if (mainAsset != null)
             {
@@ -217,12 +207,11 @@ namespace WhoDis
                 mainTabs = null;
                 playerTabsObj = null;
 
-                selectedTabIndex = 0;
                 selectedPlayer = null;
             }
         }
 
-        void colorPanel()
+        static void colorPanel()
         {
             if (mainPanel != null)
             {
@@ -236,7 +225,7 @@ namespace WhoDis
 
         #region buttons & text
 
-        void makeButtons()
+        static void makeButtons()
         {
             // parenting
 
@@ -244,6 +233,11 @@ namespace WhoDis
             playerTabsObj = mainAsset.transform.Find("mainPanel/playerTabs").gameObject;
             if (selectedPlayer == null)
                 playerTabsObj.SetActive(false);
+
+            if (buttonsParent == null)
+                buttonsParent = mainAsset.transform.Find("mainPanel/buttons").gameObject;
+
+            PlayersList();
 
             foreach (Tab t in normalTabs)
             {
@@ -284,7 +278,7 @@ namespace WhoDis
             quitimage.GetComponent<Renderer>().material.shader = Shader.Find("Universal Render Pipeline/Lit");
             quitimage.GetComponent<Renderer>().material.color = Color.white;
             quitimage.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + quitTab.tabImage);
-
+            
             colorPanel();
         }
 
@@ -301,7 +295,12 @@ namespace WhoDis
                 mainText.text = "Welcome to WhoDis!\r\n\r\nSimply hold down your\r\nleft grip to select the\r\nplayer you want to\r\nanalyse!\r\nOr, you can click the\r\nplayers tab below!";
             else if (selectedTabIndex == 1) //players
             {
-                mainText.text = "";
+                var text = "";
+                mainText.fontSize = 5;
+                foreach (Player p in PhotonNetwork.PlayerListOthers)
+                    text += $"{p.NickName}\n";
+
+                mainText.text = !PhotonNetwork.InRoom ? "Not in a room!" : text;
             }
             else if (selectedTabIndex == 2) //player info
             {
@@ -336,12 +335,34 @@ namespace WhoDis
         #endregion
 
         #region button actions
-        public static void ToggleTab(Tab tab) =>
-            tab.callMethod.Invoke();
 
+        static GameObject buttonsParent = null;
+        static GameObject tempButton = null;
         static void PlayersList()
         {
+            if (selectedTabIndex != 1 || !PhotonNetwork.InRoom)
+                return;
+            buttonsParent.SetActive(true);
+            if (tempButton == null)
+                tempButton = buttonsParent.transform.Find("button").gameObject;
 
+            tempButton.SetActive(false);
+
+            float offset = 0f;
+            for (int i = PhotonNetwork.PlayerListOthers.Length; i >= 0; i--)
+            {
+                GameObject playerButton = UnityEngine.Object.Instantiate(tempButton, buttonsParent.transform);
+                playerButton.transform.localPosition = new Vector3(0.3005f, -0.4592f - offset, -0.004f);
+                playerButton.GetComponent<Renderer>().material.color = tabsColor;
+                playerButton.SetActive(true);
+                playerButton.AddComponent<TabButton>().tab = new Tab("selectPlayer", "", () =>
+                {
+                    selectedPlayer = GorillaGameManager.instance.FindPlayerVRRig(PhotonNetwork.PlayerListOthers[i]);
+                    selectedTabIndex = 2;
+                    showPanel();
+                });
+                offset += 0.04f;
+            }
         }
 
         #endregion
@@ -388,6 +409,7 @@ namespace WhoDis
 
                 webClient.Dispose();
 
+                imageCache.Add(url, convertedTexture);
                 return convertedTexture;
             }
             catch (Exception ex)
