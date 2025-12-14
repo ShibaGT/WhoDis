@@ -40,7 +40,7 @@ namespace WhoDis
         public Tab tab;
         public void Update()
         {
-            if (Time.time > Plugin.btnDelay && Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.15 || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.15 && Time.time > Plugin.btnDelay)
+            if (Time.time > Plugin.btnDelay && Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.2 || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.2 && Time.time > Plugin.btnDelay)
             {
                 Plugin.btnDelay = Time.time + 1f;
                 tab.callMethod.Invoke();
@@ -237,6 +237,7 @@ namespace WhoDis
                 mainPanel.transform.Find("outline").GetComponent<Renderer>().material.color = outlineColor;
                 var line = mainPanel.transform.Find("line").GetComponent<Renderer>();
                 line.material.color = tabsColor;
+                delay = Time.time + 5;
             }
         }
 
@@ -548,7 +549,7 @@ namespace WhoDis
                 failure.Invoke();
         }
 
-        float delay;
+        static float delay;
         public static bool isUsingiiDkB = false;
         public static Dictionary<NetPlayer, bool> usingiiDk = new Dictionary<NetPlayer, bool> { };
         bool isUsingiiDk(VRRig rig)
