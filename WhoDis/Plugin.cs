@@ -17,6 +17,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using Valve.Newtonsoft.Json;
+using static OVRInput;
 
 namespace WhoDis
 {
@@ -39,12 +40,13 @@ namespace WhoDis
         public Tab tab;
         public void Update()
         {
-            if (Time.time > Plugin.btnDelay + 1 && (Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.15) || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.15)
+            if (Time.time > Plugin.btnDelay && Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.15 || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.15 && Time.time > Plugin.btnDelay)
             {
-                Plugin.btnDelay = Time.time;
+                Plugin.btnDelay = Time.time + 1f;
                 tab.callMethod.Invoke();
                 GorillaTagger.Instance.StartVibration(false, 1f, 0.1f);
-                GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(84, false, 0.8f);
+                GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(84, false, 0.7f);
+                Plugin.isUsingiiDkB = false;
             }
         }
     }
@@ -53,27 +55,31 @@ namespace WhoDis
     public class Plugin : BaseUnityPlugin
     {
         // made with love by tai/shibagt <3
+        // this is my first time making a mainly asset bundle based mod, so forgive me if its messy :)
 
-        public static GameObject mainAsset, mainPanel, mainTabs, playerTabsObj, playerSelectionCapsule;
+        public static GameObject mainAsset, mainPanel, mainTabs, playerTabsObj, playerSelectionCapsule, tempButton, buttonsParent;
         public static float btnDelay;
         public static Transform leftController
         { get { return GTPlayer.Instance.LeftHand.controllerTransform; } }
         public static Transform rightController
         { get { return GTPlayer.Instance.RightHand.controllerTransform; } }
 
-        public static Color selectionColor = new Color(0.00f, 0.66f, 0.60f, 0.60f);
-        public static Color panelColor = new Color32(5, 5, 10, 250);
-        public static Color tabsColor = new Color32(30, 136, 229, 220);
+        public static Color selectionColor = new Color32(45, 220, 230, 255); 
+        public static Color panelColor = new Color32(11, 11, 22, 255);
+        public static Color outlineColor = new Color32(38, 150, 209, 255);
+        public static Color tabsColor = new Color32(42, 145, 209, 255);      
+        public static Color textColor = new Color32(235, 239, 242, 255);    
 
         public static LineRenderer lr;
         public static VRRig selectedPlayer;
 
         public static int selectedTabIndex = 0;
+        public static bool destroyButtonsToggle;
 
         public static Tab[] normalTabs = new Tab[]
         {
             new Tab("Home", "home.png", ()=> selectedTabIndex = 0), //0
-            new Tab("Players", "players.png", ()=> { selectedTabIndex = 1; showPanel(); }), //1
+            new Tab("Players", "players.png", ()=> { selectedTabIndex = 1; PlayersList(); }), //1
         };
 
         public static Tab[] playerTabs = new Tab[]
@@ -91,14 +97,20 @@ namespace WhoDis
 
             if (ControllerInputPoller.instance.rightControllerPrimaryButton || ControllerInputPoller.instance.leftControllerPrimaryButton)
                 if (mainPanel == null)
+                {
+                    selectedTabIndex = 0;
                     showPanel();
+                }
 
             if (mainPanel != null)
             {
                 createText();
-                mainAsset.transform.position = GTPlayer.Instance.headCollider.transform.position + GTPlayer.Instance.headCollider.transform.forward * 0.8f;
+                mainAsset.transform.position = GTPlayer.Instance.headCollider.transform.position + GTPlayer.Instance.headCollider.transform.forward * 0.6f;
                 mainAsset.transform.rotation = Quaternion.LookRotation(mainAsset.transform.position - GTPlayer.Instance.headCollider.transform.position);
             }
+
+            if (selectedTabIndex != 1)
+                DestroyPlayerButtons();
         }
 
         #region pointer
@@ -176,7 +188,6 @@ namespace WhoDis
 
         static void showPanel()
         {
-            Debug.Log("drawn");
             destroyPanel();
 
             if (mainPanel == null)
@@ -188,8 +199,9 @@ namespace WhoDis
             makeButtons();
         }
 
-        void showPanel(VRRig player)
+        static void showPanel(VRRig player)
         {
+            btnDelay = Time.time + 3f;
             selectedPlayer = player;
             selectedTabIndex = 2; //players tab
             showPanel();
@@ -207,7 +219,13 @@ namespace WhoDis
                 mainTabs = null;
                 playerTabsObj = null;
 
-                selectedPlayer = null;
+                buttonsParent = null;
+                tempButton = null;
+                destroyButtonsToggle = false;
+                isUsingiiDkB = false;
+
+                if (selectedPlayer.OwningNetPlayer == null)
+                    selectedPlayer = null;
             }
         }
 
@@ -216,6 +234,7 @@ namespace WhoDis
             if (mainPanel != null)
             {
                 mainPanel.GetComponent<Renderer>().material.color = panelColor;
+                mainPanel.transform.Find("outline").GetComponent<Renderer>().material.color = outlineColor;
                 var line = mainPanel.transform.Find("line").GetComponent<Renderer>();
                 line.material.color = tabsColor;
             }
@@ -227,8 +246,6 @@ namespace WhoDis
 
         static void makeButtons()
         {
-            // parenting
-
             mainTabs = mainAsset.transform.Find("mainPanel/mainTabs").gameObject;
             playerTabsObj = mainAsset.transform.Find("mainPanel/playerTabs").gameObject;
             if (selectedPlayer == null)
@@ -236,8 +253,6 @@ namespace WhoDis
 
             if (buttonsParent == null)
                 buttonsParent = mainAsset.transform.Find("mainPanel/buttons").gameObject;
-
-            PlayersList();
 
             foreach (Tab t in normalTabs)
             {
@@ -266,6 +281,7 @@ namespace WhoDis
                 image.GetComponent<Renderer>().material.shader = Shader.Find("Universal Render Pipeline/Lit");
                 image.GetComponent<Renderer>().material.color = Color.white;
                 image.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + t.tabImage);
+
             }
             playerTabsObj.transform.Find("tab").gameObject.Destroy();
 
@@ -278,7 +294,8 @@ namespace WhoDis
             quitimage.GetComponent<Renderer>().material.shader = Shader.Find("Universal Render Pipeline/Lit");
             quitimage.GetComponent<Renderer>().material.color = Color.white;
             quitimage.GetComponent<Renderer>().material.mainTexture = DownloadImage("https://untitled.rip/menuAssets/" + quitTab.tabImage);
-            
+
+            PlayersList();
             colorPanel();
         }
 
@@ -286,83 +303,112 @@ namespace WhoDis
         {
             if (mainPanel == null)
                 return;
-            var mainText = mainAsset.transform.Find("mainPanel/Canvas/maintext").GetComponent<TextMeshProUGUI>();
-            var selectedText = mainAsset.transform.Find("mainPanel/Canvas/selected").GetComponent<TextMeshProUGUI>();
-            mainText.fontSize = 6;
-            selectedText.text = "by shibagt <3";
 
-            if (selectedTabIndex == 0) //home
-                mainText.text = "Welcome to WhoDis!\r\n\r\nSimply hold down your\r\nleft grip to select the\r\nplayer you want to\r\nanalyse!\r\nOr, you can click the\r\nplayers tab below!";
-            else if (selectedTabIndex == 1) //players
+            try
             {
-                var text = "";
-                mainText.fontSize = 5;
-                foreach (Player p in PhotonNetwork.PlayerListOthers)
-                    text += $"{p.NickName}\n";
+                var mainText = mainAsset.transform.Find("mainPanel/Canvas/maintext").GetComponent<TextMeshProUGUI>();
+                var selectedText = mainAsset.transform.Find("mainPanel/Canvas/selected").GetComponent<TextMeshProUGUI>();
+                mainText.fontSize = 6;
+                selectedText.text = "by shibagt <3";
 
-                mainText.text = !PhotonNetwork.InRoom ? "Not in a room!" : text;
-            }
-            else if (selectedTabIndex == 2) //player info
-            {
-                if (selectedPlayer == null)
+                // Apply readable UI text color
+                mainText.color = textColor;
+                selectedText.color = textColor;
+
+                if (selectedTabIndex == 0) //home
+                    mainText.text = "Welcome to WhoDis!\r\n\r\nSimply hold down your\r\nleft grip to select the\r\nplayer you want to\r\nanalyse!\r\nOr, you can click the\r\nplayers tab below!";
+                else if (selectedTabIndex == 1) //players
                 {
-                    mainText.text = "Selected player left!";
-                    return;
+                    var text = "";
+                    mainText.fontSize = 5;
+                    foreach (Player p in PhotonNetwork.PlayerListOthers)
+                        text += $"{p.NickName}\n";
+
+                    mainText.text = !PhotonNetwork.InRoom ? "Not in a room!" : text;
                 }
-                mainText.text =
-                        $"{GetPlatform(selectedPlayer)}\n" +
-                        $"{GetFPS(selectedPlayer)} FPS\n" +
-                        $"{GetPing(selectedPlayer)}ms\n" +
-                        $"{GetColor(selectedPlayer)}\n" +
-                        $"{GetDate(selectedPlayer)}\n";
-                selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
-            }
-            else if (selectedTabIndex == 3) //mods tab
-            {
-                if (selectedPlayer == null)
+                else if (selectedTabIndex == 2) //player info
                 {
-                    mainText.text = "Selected player left!";
-                    return;
+                    if (selectedPlayer == null)
+                    {
+                        mainText.text = "Selected player left!";
+                        return;
+                    }
+                    mainText.text =
+                            $"{GetPlatform(selectedPlayer)}\n" +
+                            $"{GetFPS(selectedPlayer)} FPS\n" +
+                            $"{GetPing(selectedPlayer)}ms\n" +
+                            $"{GetColor(selectedPlayer)}\n" +
+                            $"{GetDate(selectedPlayer)}\n";
+                    selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
                 }
-                mainText.fontSize = 5;
-                mainText.text =
-                    $"Player Mods\n" +
-                    $"{GetMods(selectedPlayer)}";
-                selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
+                else if (selectedTabIndex == 3) //mods tab
+                {
+                    if (selectedPlayer == null)
+                    {
+                        mainText.text = "Selected player left!";
+                        return;
+                    }
+                    mainText.fontSize = 5;
+                    mainText.text =
+                        $"Player Mods\n" +
+                        $"{GetMods(selectedPlayer)}";
+                    selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("Error in createText: " + ex.Message);
             }
         }
 
         #endregion
 
         #region button actions
-
-        static GameObject buttonsParent = null;
-        static GameObject tempButton = null;
         static void PlayersList()
         {
-            if (selectedTabIndex != 1 || !PhotonNetwork.InRoom)
-                return;
-            buttonsParent.SetActive(true);
             if (tempButton == null)
-                tempButton = buttonsParent.transform.Find("button").gameObject;
-
-            tempButton.SetActive(false);
-
-            float offset = 0f;
-            for (int i = PhotonNetwork.PlayerListOthers.Length; i >= 0; i--)
             {
-                GameObject playerButton = UnityEngine.Object.Instantiate(tempButton, buttonsParent.transform);
-                playerButton.transform.localPosition = new Vector3(0.3005f, -0.4592f - offset, -0.004f);
-                playerButton.GetComponent<Renderer>().material.color = tabsColor;
-                playerButton.SetActive(true);
-                playerButton.AddComponent<TabButton>().tab = new Tab("selectPlayer", "", () =>
-                {
-                    selectedPlayer = GorillaGameManager.instance.FindPlayerVRRig(PhotonNetwork.PlayerListOthers[i]);
-                    selectedTabIndex = 2;
-                    showPanel();
-                });
-                offset += 0.06f;
+                Debug.Log("0");
+                tempButton = buttonsParent.transform.Find("button").gameObject;
+                tempButton.SetActive(false);
             }
+            Debug.Log("1");
+            if (selectedTabIndex != 1 || !PhotonNetwork.InRoom)
+            {
+                DestroyPlayerButtons();
+                return;
+            }
+            buttonsParent.SetActive(true);
+            Debug.Log("2");
+            float offset = 0f;
+            for (int i = NetworkSystem.Instance.PlayerListOthers.Length - 1; i >= 0; i--)
+            {
+                int index = i; // Capture the current value of i
+                GameObject playerButton = UnityEngine.Object.Instantiate(tempButton, buttonsParent.transform);
+                playerButton.SetActive(true);
+                var Tab = new Tab("buttonn", "", () => { showPanel(GorillaGameManager.instance.FindPlayerVRRig(NetworkSystem.Instance.PlayerListOthers[index])); });
+                Tab.Gobject = playerButton.gameObject;
+                playerButton.AddComponent<TabButton>().tab = Tab;
+                playerButton.transform.localPosition = new Vector3(0.3005f, -0.4592f - offset, -0.022f);
+                playerButton.GetComponent<Renderer>().material.color = tabsColor;
+
+                offset += 0.056f;
+            }
+            Debug.Log("3");
+            destroyButtonsToggle = false;
+        }
+
+        static void DestroyPlayerButtons()
+        {
+            if (buttonsParent == null || tempButton == null || destroyButtonsToggle || mainPanel == null)
+                return;
+            foreach (Transform child in buttonsParent.transform)
+            {
+                if (child.gameObject != tempButton)
+                    UnityEngine.Object.Destroy(child.gameObject);
+            }
+            destroyButtonsToggle = true;
+            tempButton.SetActive(false);
         }
 
         #endregion
@@ -443,7 +489,7 @@ namespace WhoDis
             if (fps > 60)
                 fpsString = $"<color=green>{fps.ToString()}</color>";
             if (fps > 100)
-                fpsString = $"<color=cyan>{fps.ToString()}</color>";
+                fpsString = $"<color=blue>{fps.ToString()}</color>";
 
             return fpsString;
         }
@@ -502,14 +548,26 @@ namespace WhoDis
                 failure.Invoke();
         }
 
+        float delay;
+        public static bool isUsingiiDkB = false;
+        public static Dictionary<NetPlayer, bool> usingiiDk = new Dictionary<NetPlayer, bool> { };
         bool isUsingiiDk(VRRig rig)
         {
-            bool isUsingiiDk = false;
-            StartCoroutine(CheckifUser(rig.OwningNetPlayer.UserId, "frienduser",
-                () => isUsingiiDk = true,
-                () => isUsingiiDk = false
-            ));
-            return isUsingiiDk;
+            if (Time.time > delay)
+            {
+                if (usingiiDk.ContainsKey(rig.OwningNetPlayer))
+                {
+                    isUsingiiDkB = usingiiDk[rig.OwningNetPlayer];
+                    delay = Time.time + 3;
+                    return isUsingiiDkB;
+                }
+                StartCoroutine(CheckifUser(rig.OwningNetPlayer.UserId, "frienduser",
+                    () => { isUsingiiDkB = true; usingiiDk.Add(rig.OwningNetPlayer, true); },
+                    () => { isUsingiiDkB = false; usingiiDk.Add(rig.OwningNetPlayer, false); }
+                ));
+                delay = Time.time + 10;
+            }
+            return isUsingiiDkB;
         }
 
         string GetMods(VRRig rig)
