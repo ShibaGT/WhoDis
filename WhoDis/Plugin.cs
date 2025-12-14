@@ -18,6 +18,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Valve.Newtonsoft.Json;
 using static OVRInput;
+using static UnityEngine.TouchScreenKeyboard;
 
 namespace WhoDis
 {
@@ -38,15 +39,22 @@ namespace WhoDis
     public class TabButton : MonoBehaviour
     {
         public Tab tab;
-        public void Update()
+
+        public void OnTriggerEnter(Collider collider)
         {
-            if (Time.time > Plugin.btnDelay && Vector3.Distance(Plugin.rightController.position, tab.Gobject.transform.position) <= 0.2 || Vector3.Distance(Plugin.leftController.position, tab.Gobject.transform.position) <= 0.2 && Time.time > Plugin.btnDelay)
+            if (collider != null && Plugin.LpointerObject != null)
             {
-                Plugin.btnDelay = Time.time + 1f;
-                tab.callMethod.Invoke();
-                GorillaTagger.Instance.StartVibration(false, 1f, 0.1f);
-                GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(84, false, 0.7f);
-                Plugin.isUsingiiDkB = false;
+                if (collider == Plugin.RpointerObject.GetComponent<Collider>() || collider == Plugin.LpointerObject.GetComponent<Collider>())
+                {
+                    if (Time.time > Plugin.btnDelay)
+                    {
+                        Plugin.btnDelay = Time.time + 1f;
+                        tab.callMethod.Invoke();
+                        GorillaTagger.Instance.StartVibration(false, 1f, 0.1f);
+                        GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(84, false, 0.7f);
+                        Plugin.isUsingiiDkB = false;
+                    }
+                }
             }
         }
     }
@@ -57,7 +65,7 @@ namespace WhoDis
         // made with love by tai/shibagt <3
         // this is my first time making a mainly asset bundle based mod, so forgive me if its messy :)
 
-        public static GameObject mainAsset, mainPanel, mainTabs, playerTabsObj, playerSelectionCapsule, tempButton, buttonsParent;
+        public static GameObject mainAsset, mainPanel, mainTabs, playerTabsObj, playerSelectionCapsule, tempButton, buttonsParent, LpointerObject, RpointerObject;
         public static float btnDelay;
         public static Transform leftController
         { get { return GTPlayer.Instance.LeftHand.controllerTransform; } }
@@ -111,9 +119,29 @@ namespace WhoDis
 
             if (selectedTabIndex != 1)
                 DestroyPlayerButtons();
+
+            if (LpointerObject == null && mainPanel != null)
+            {
+                CreateClicker(ref RpointerObject, rightController);
+                CreateClicker(ref LpointerObject, leftController);
+            }
         }
 
         #region pointer
+        public static void CreateClicker(ref GameObject clickerObj, Transform parentTransform)
+        {
+            if (clickerObj == null)
+            {
+                clickerObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                clickerObj.transform.parent = parentTransform;
+                clickerObj.GetComponent<Renderer>().material.color = panelColor;
+                clickerObj.transform.localPosition = new Vector3(0f, -0.1f, 0f);
+                clickerObj.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+                clickerObj.GetComponent<SphereCollider>().isTrigger = true;
+                clickerObj.name = "WhoDisClicker";
+            }
+        }
+
         void pointerCast()
         {
             Ray ray = new Ray(leftController.position, leftController.forward);
@@ -226,6 +254,14 @@ namespace WhoDis
 
                 if (selectedPlayer.OwningNetPlayer == null)
                     selectedPlayer = null;
+
+                if (LpointerObject != null)
+                {
+                    Destroy(LpointerObject);
+                    LpointerObject = null;
+                    Destroy(RpointerObject);
+                    RpointerObject = null;
+                }
             }
         }
 
