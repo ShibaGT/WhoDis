@@ -23,8 +23,8 @@ A **simple, clean Gorilla Tag mod** that lets you inspect players in game and vi
 
 ## 🎮 Controls
 
-* **Open Menu (optional):**
-  Press **either top primary buttons** on your controller
+* **Open & Close Menu (optional):**
+  Press **left bottom face button** on your controller to open, Press **right bottom face button** on your controller to close
 
 * **Quick Select Player:**
   Hold **Left Grip** + press **Left Trigger** while pointing at a player

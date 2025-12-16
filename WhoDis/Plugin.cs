@@ -78,6 +78,9 @@ namespace WhoDis
         public static Color tabsColor = new Color32(42, 145, 209, 255);      
         public static Color textColor = new Color32(235, 239, 242, 255);    
 
+        public static Vector3 smoothTargetPosition = Vector3.zero;
+        public static Quaternion smoothTargetRotation = Quaternion.identity;
+
         public static LineRenderer lr;
         public static VRRig selectedPlayer;
 
@@ -103,18 +106,26 @@ namespace WhoDis
             else
                 destroyPointer();
 
-            if (ControllerInputPoller.instance.rightControllerPrimaryButton || ControllerInputPoller.instance.leftControllerPrimaryButton)
+            if (ControllerInputPoller.instance.leftControllerPrimaryButton)
                 if (mainPanel == null)
                 {
                     selectedTabIndex = 0;
                     showPanel();
                 }
+            else if (mainPanel != null && ControllerInputPoller.instance.rightControllerPrimaryButton)
+                destroyPanel();
 
             if (mainPanel != null)
             {
                 createText();
                 mainAsset.transform.position = GTPlayer.Instance.headCollider.transform.position + GTPlayer.Instance.headCollider.transform.forward * 0.6f;
                 mainAsset.transform.rotation = Quaternion.LookRotation(mainAsset.transform.position - GTPlayer.Instance.headCollider.transform.position);
+
+                smoothTargetPosition = smoothTargetPosition == Vector3.zero ? mainAsset.transform.position : Vector3.Lerp(smoothTargetPosition, mainAsset.transform.position, Time.deltaTime * 10f);
+                smoothTargetRotation = smoothTargetRotation == Quaternion.identity ? mainAsset.transform.rotation : Quaternion.Lerp(smoothTargetRotation, mainAsset.transform.rotation, Time.deltaTime * 10f);
+
+                mainAsset.transform.position = smoothTargetPosition;
+                mainAsset.transform.rotation = smoothTargetRotation;
             }
 
             if (selectedTabIndex != 1)
@@ -405,11 +416,9 @@ namespace WhoDis
         {
             if (tempButton == null)
             {
-                Debug.Log("0");
                 tempButton = buttonsParent.transform.Find("button").gameObject;
                 tempButton.SetActive(false);
             }
-            Debug.Log("1");
             if (selectedTabIndex != 1 || !PhotonNetwork.InRoom)
             {
                 DestroyPlayerButtons();
@@ -420,7 +429,7 @@ namespace WhoDis
             float offset = 0f;
             for (int i = NetworkSystem.Instance.PlayerListOthers.Length - 1; i >= 0; i--)
             {
-                int index = i; // Capture the current value of i
+                int index = i;
                 GameObject playerButton = UnityEngine.Object.Instantiate(tempButton, buttonsParent.transform);
                 playerButton.SetActive(true);
                 var Tab = new Tab("buttonn", "", () => { showPanel(GorillaGameManager.instance.FindPlayerVRRig(NetworkSystem.Instance.PlayerListOthers[index])); });
@@ -431,7 +440,6 @@ namespace WhoDis
 
                 offset += 0.056f;
             }
-            Debug.Log("3");
             destroyButtonsToggle = false;
         }
 
