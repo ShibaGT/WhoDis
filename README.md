@@ -83,4 +83,4 @@ Both methods show the same detailed information.
 
 ---
 
-**WhoDis** — *because sometimes you just wanna know.* 👀
+**WhoDis**, *because sometimes you just wanna know.* 👀
