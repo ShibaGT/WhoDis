@@ -48,9 +48,8 @@ namespace WhoDis
                 {
                     if (Time.time > Plugin.btnDelay)
                     {
-                        Plugin.btnDelay = Time.time + 1f;
+                        Plugin.btnDelay = Time.time + 0.3f;
                         tab.callMethod.Invoke();
-                        GorillaTagger.Instance.StartVibration(false, 1f, 0.1f);
                         GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(84, false, 0.7f);
                         Plugin.isUsingiiDkB = false;
                     }
@@ -175,7 +174,6 @@ namespace WhoDis
                 var player = hitObject.GetComponentInParent<VRRig>();
                 if (player != null)
                 {
-                    // highlight player
                     if (playerSelectionCapsule == null)
                     {
                         playerSelectionCapsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -191,7 +189,6 @@ namespace WhoDis
                         playerSelectionCapsule.transform.rotation = player.transform.rotation;
                     }
 
-                    // select player
                     if (ControllerInputPoller.instance.leftControllerIndexFloat > 0.5f)
                         selectPlayer(player);
                 }
@@ -240,9 +237,9 @@ namespace WhoDis
 
         static void showPanel(VRRig player)
         {
-            btnDelay = Time.time + 3f;
+            btnDelay = Time.time + 1.1f;
             selectedPlayer = player;
-            selectedTabIndex = 2; //players tab
+            selectedTabIndex = 2;
             showPanel();
         }
 
@@ -263,7 +260,7 @@ namespace WhoDis
                 destroyButtonsToggle = false;
                 isUsingiiDkB = false;
 
-                if (selectedPlayer.OwningNetPlayer == null)
+                if (selectedPlayer != null && selectedPlayer.OwningNetPlayer == null)
                     selectedPlayer = null;
 
                 if (LpointerObject != null)
@@ -359,22 +356,21 @@ namespace WhoDis
                 mainText.fontSize = 6;
                 selectedText.text = "by shibagt <3";
 
-                // Apply readable UI text color
                 mainText.color = textColor;
                 selectedText.color = textColor;
 
-                if (selectedTabIndex == 0) //home
+                if (selectedTabIndex == 0)
                     mainText.text = "Welcome to WhoDis!\r\n\r\nSimply hold down your\r\nleft grip to select the\r\nplayer you want to\r\nanalyse!\r\nOr, you can click the\r\nplayers tab below!";
-                else if (selectedTabIndex == 1) //players
+                else if (selectedTabIndex == 1)
                 {
-                    var text = "";
                     mainText.fontSize = 5;
-                    foreach (Player p in PhotonNetwork.PlayerListOthers)
-                        text += $"{p.NickName}\n";
-
-                    mainText.text = !PhotonNetwork.InRoom ? "Not in a room!" : text;
+                    List<string> players = new List<string>();
+                    foreach (var p in NetworkSystem.Instance.PlayerListOthers)
+                        players.Add(p.NickName);
+                    players.Reverse();
+                    mainText.text = !PhotonNetwork.InRoom ? "Not in a room!" : players.ToArray().Length == 0 ? "No other players!" : string.Join("\n", players.ToArray());
                 }
-                else if (selectedTabIndex == 2) //player info
+                else if (selectedTabIndex == 2)
                 {
                     if (selectedPlayer == null)
                     {
@@ -389,7 +385,7 @@ namespace WhoDis
                             $"{GetDate(selectedPlayer)}\n";
                     selectedText.text = selectedPlayer.OwningNetPlayer.NickName.ToLower();
                 }
-                else if (selectedTabIndex == 3) //mods tab
+                else if (selectedTabIndex == 3)
                 {
                     if (selectedPlayer == null)
                     {
