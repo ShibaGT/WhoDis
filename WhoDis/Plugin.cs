@@ -106,11 +106,13 @@ namespace WhoDis
                 destroyPointer();
 
             if (ControllerInputPoller.instance.leftControllerPrimaryButton)
+            {
                 if (mainPanel == null)
                 {
                     selectedTabIndex = 0;
                     showPanel();
                 }
+            }
             else if (mainPanel != null && ControllerInputPoller.instance.rightControllerPrimaryButton)
                 destroyPanel();
 
@@ -508,7 +510,7 @@ namespace WhoDis
 
         public static string GetPlatform(VRRig rig)
         {
-            string concatStringOfCosmeticsAllowed = rig.concatStringOfCosmeticsAllowed;
+            string concatStringOfCosmeticsAllowed = rig.rawCosmeticString;
 
             if (concatStringOfCosmeticsAllowed.Contains("S. FIRST LOGIN"))
                 return "<color=blue>Steam</color>";
@@ -715,7 +717,7 @@ namespace WhoDis
             CosmeticsController.CosmeticSet cosmeticSet = rig.cosmeticSet;
             foreach (CosmeticsController.CosmeticItem cosmetic in cosmeticSet.items)
             {
-                if (!cosmetic.isNullItem && !rig.concatStringOfCosmeticsAllowed.Contains(cosmetic.itemName))
+                if (!cosmetic.isNullItem && !rig.rawCosmeticString.Contains(cosmetic.itemName))
                 {
                     specialMods += (specialMods == "" ? "" : ", ") + "<color=green>COSMETX</color>";
                     break;
