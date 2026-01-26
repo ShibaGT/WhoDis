@@ -617,6 +617,7 @@ namespace WhoDis
             NetPlayer creator = rig.Creator;
 
             Dictionary<string, string[]> specialModsList = new Dictionary<string, string[]> {
+                // original
                 { "genesis", new string[] { "GENESIS", "07019C" } },
                 { "HP_Left", new string[] { "HOLDABLEPAD", "332316" } },
                 { "GrateVersion", new string[] { "GRATE", "707070" } },
@@ -696,7 +697,46 @@ namespace WhoDis
                 { "I like cheese", new string[] { "RECROOMRIG", "FE8232" } },
                 { "silliness", new string[] { "SILLINESS", "FFBAFF" } },
                 { "emotewheel", new string[] { "EMOTEWHEEL", "1E2030" } },
-                { "untitled", new string[] { "UNTITLED", "2D73AF" } }
+                { "untitled", new string[] { "UNTITLED", "2D73AF" } },
+    
+                // data.hamburbur.org "KnownMods"
+                { "Fusioned", new string[] { "FUSIONED", "00FF00" } },
+                { "WhoIsThatMonke", new string[] { "WHOSICHEATING", "00FF00" } },
+                { "WhoIsThatMonke Version", new string[] { "WHOSICHEATING", "00FF00" } },
+                { "GorillaNametags", new string[] { "GNAMETAGS", "00FF00" } },
+                { "DeeTags", new string[] { "DEETAGS", "00FF00" } },
+                { "Boy Do I Love Information", new string[] { "BDILI", "00FF00" } },
+                { "NametagsPlusPlus", new string[] { "NAMETAGS++", "00FF00" } },
+                { "WalkSimulator", new string[] { "WALKSIM", "00FF00" } },
+                { "Dingus", new string[] { "DINGUS", "00FF00" } },
+                { "Graze Heath System", new string[] { "HEALTH SYSTEM", "00FF00" } },
+                { "Gorilla Track Packed", new string[] { "GORILLA TRACK", "00FF00" } },
+                { "drowsiiiGorillaInfoBoard", new string[] { "GINFO BOARD", "00FF00" } },
+                { "MonkeCosmetics,,Material", new string[] { "MONKE COSMETICS", "00FF00" } },
+                { "github.com/arielthemonke/GorillaCraftAutoBuilder", new string[] { "GCRAFT AUTO BUILDER", "00FF00" } },
+                { "usinggphys", new string[] { "GPHYS", "00FF00" } },
+                { "Gorilla Track 2.3.0", new string[] { "GTRACK", "00FF00" } },
+                { "GorillaTorsoEstimator", new string[] { "TORSO ESTIMATION", "00FF00" } },
+                { "BoyDoILoveInformation Public", new string[] { "BDILI", "00FF00" } },
+                { "DTAOI", new string[] { "DTAOI", "00FF00" } },
+                { "GorillaShop", new string[] { "GORILLA SHOP", "00FF00" } },
+                { "DTASLOI", new string[] { "DTASLOI", "00FF00" } },
+                { "GorillaChatBox", new string[] { "GORILLA CHAT BOX", "00FF00" } },
+    
+                // data.hamburbur.org "KnownCheats"
+                { "VioletFreeUser", new string[] { "VIOLET FREE", "FF0000" } },
+                { "Hidden Menu", new string[] { "HIDDEN", "FF0000" } },
+                { "ElixirMenu", new string[] { "ELIXIR", "FF0000" } },
+                { "Elixir", new string[] { "ELIXIR", "FF0000" } },
+                { "VioletPaidUser", new string[] { "VIOLET PAID", "FF0000" } },
+                { "EmoteWheel", new string[] { "EMOTES", "FF0000" } },
+                { "MistUser", new string[] { "MIST", "FF0000" } },
+                { "ØƦƁƖƬ", new string[] { "ORBIT (WEEB)", "FF0000" } },
+                { "y u lookin in here weirdo", new string[] { "MALACHI MENU REBORN", "FF0000" } },
+                { "Atlas", new string[] { "ATLAS", "FF0000" } },
+                { "Euphoric", new string[] { "EUPHORIA", "FF0000" } },
+                { "CurrentEmote", new string[] { "VORTEX EMOTES", "FF0000" } },
+                { "Explicit", new string[] { "EXPLICIT MENU", "FF0000" } }
             };
 
             Dictionary<string, object> customProps = new Dictionary<string, object>();
